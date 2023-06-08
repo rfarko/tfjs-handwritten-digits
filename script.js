@@ -3,6 +3,10 @@ const PREDICTION_ELEMENT = document.getElementById("prediction");
 const CANVAS = document.getElementById("canvas");
 const CTX = CANVAS.getContext("2d");
 const PREDICT_BTN = document.getElementById("predictBtn");
+const scaleFactor = 6;
+let isDrawing = false;
+
+initCanvas();
 
 // Grab a reference to the MNIST input values (pixel data).
 const INPUTS = TRAINING_DATA.inputs;
@@ -76,7 +80,9 @@ function evaluate() {
   const OFFSET = Math.floor(Math.random() * INPUTS.length); // Select random from all example inputs.
 
   let answer = tf.tidy(function () {
-    let newInput = tf.tensor1d(INPUTS[OFFSET]).expandDims();
+    let newInput = tf.tensor1d(getCanvasData()).expandDims();
+    // let newInput = tf.tensor1d(INPUTS[OFFSET]).expandDims();
+    // newInput.print();
     let output = model.predict(newInput);
     output.print();
     return output.squeeze().argMax();
@@ -88,28 +94,101 @@ function evaluate() {
 
     PREDICTION_ELEMENT.setAttribute(
       "class",
-      index === OUTPUTS[OFFSET] ? "correct" : "wrong"
+      //index === OUTPUTS[OFFSET] ? "correct" : "wrong"
+      "correct"
     );
 
     answer.dispose();
-    drawImage(INPUTS[OFFSET]);
+    // drawImage(INPUTS[OFFSET]);
   });
 }
 
 /** ----------------------------------------------------
  * draws the digit on the canvas
 ---------------------------------------------------- */
-function drawImage(digit) {
-  var imageData = CTX.getImageData(0, 0, 28, 28);
+// function drawImage(digit) {
+//   var imageData = CTX.getImageData(0, 0, 28, 28);
 
-  for (let i = 0; i < digit.length; i++) {
-    imageData.data[i * 4] = digit[i] * 255; // Red Channel.
-    imageData.data[i * 4 + 1] = digit[i] * 255; // Green Channel.
-    imageData.data[i * 4 + 2] = digit[i] * 255; // Blue Channel.
-    imageData.data[i * 4 + 3] = 255; // Alpha Channel.
-  }
+//   for (let i = 0; i < digit.length; i++) {
+//     imageData.data[i * 4] = digit[i] * 255; // Red Channel.
+//     imageData.data[i * 4 + 1] = digit[i] * 255; // Green Channel.
+//     imageData.data[i * 4 + 2] = digit[i] * 255; // Blue Channel.
+//     imageData.data[i * 4 + 3] = 255; // Alpha Channel.
+//   }
 
-  // Render the updated array of data to the canvas itself.
-  CTX.putImageData(imageData, 0, 0);
+//   // Render the updated array of data to the canvas itself.
+//   CTX.putImageData(imageData, 0, 0);
+// }
+
+/** ----------------------------------------------------
+ * initialize the canvas
+---------------------------------------------------- */
+function initCanvas() {
+  CTX.fillStyle = "black";
+  CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+
+  let lastX, lastY;
+
+  CANVAS.addEventListener("mousedown", () => {
+    isDrawing = true;
+  });
+
+  CANVAS.addEventListener("mouseup", () => {
+    isDrawing = false;
+    lastX = undefined;
+    lastY = undefined;
+  });
+
+  CANVAS.addEventListener("mousemove", (event) => {
+    if (isDrawing) {
+      CTX.strokeStyle = "white";
+      CTX.lineWidth = scaleFactor;
+      const rect = CANVAS.getBoundingClientRect();
+      const x = Math.floor((event.clientX - rect.left));
+      const y = Math.floor((event.clientY - rect.top));
+      CTX.beginPath();
+      CTX.moveTo(lastX, lastY);
+      CTX.lineTo(x, y);
+      CTX.stroke();
+      lastX = x;
+      lastY = y;
+    }
+  });
+
+  document.getElementById("clearCanvas").addEventListener("click", () => {
+    // Fill the canvas with black again
+    CTX.fillStyle = "black";
+    CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
+    lastX = undefined;
+    lastY = undefined;
+  });
 }
 
+
+/** ----------------------------------------------------
+ * Read canvas data
+---------------------------------------------------- */
+function getCanvasData() {
+  const originalWidth = CANVAS.width;
+  const originalHeight = CANVAS.height;
+
+  const scaledWidth = Math.floor(originalWidth / scaleFactor);
+  const scaledHeight = Math.floor(originalHeight / scaleFactor);
+
+  let scaledImage = [];
+
+  for (let y = 0; y < scaledHeight; y++) {
+    // let row = [];
+    for (let x = 0; x < scaledWidth; x++) {
+      // Fetch the pixel data from the original image
+      let imageData = CTX.getImageData(x * scaleFactor, y * scaleFactor, 1, 1).data;
+      let r = imageData[0];
+      let g = imageData[1];
+      let b = imageData[2];
+      // row.push([r, g, b]);
+      scaledImage.push((r+b+g)/3/255);
+    }
+  }
+
+  return scaledImage;
+}
