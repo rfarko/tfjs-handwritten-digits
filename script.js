@@ -37,9 +37,9 @@ PREDICT_BTN.addEventListener("click", function () {
   evaluate();
 });
 
-/**
+/** ----------------------------------------------------
  * trains the model
- */
+ ---------------------------------------------------- */
 async function train() {
   // Compile the model with the defined optimizer and specify our loss function to use.
   model.compile({
@@ -59,7 +59,7 @@ async function train() {
   OUTPUTS_TENSOR.dispose();
   INPUTS_TENSOR.dispose();
 
-  evaluate(); // Once trained we can evaluate the model.
+  // evaluate(); // Once trained we can evaluate the model.
 }
 
 /** ----------------------------------------------------
@@ -69,9 +69,9 @@ function logProgress(epoch, logs) {
   console.log("Data for epoch " + epoch, Math.sqrt(logs.loss));
 }
 
-/**
+/** ----------------------------------------------------
  * evaluates the model.
- */
+---------------------------------------------------- */
 function evaluate() {
   const OFFSET = Math.floor(Math.random() * INPUTS.length); // Select random from all example inputs.
 
@@ -96,9 +96,9 @@ function evaluate() {
   });
 }
 
-/**
+/** ----------------------------------------------------
  * draws the digit on the canvas
- */
+---------------------------------------------------- */
 function drawImage(digit) {
   var imageData = CTX.getImageData(0, 0, 28, 28);
 
